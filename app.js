@@ -17,8 +17,8 @@
   for (const list of Object.values(data.signposts)) list.forEach((id, i) => { if (i) parent[id] ??= list[i - 1]; });
   const tip = (sci) => data.signposts[sci].at(-1);
   // reference labels are Portuguese names for leaves without one
-  for (const [sci, label] of refs) N[tip(sci)].n ??= label;
   for (const [id, p] of Object.entries(parent)) if (N[id].n && N[id].n === N[p]?.n) delete N[id].n;
+  for (const [sci, label] of refs) N[tip(sci)].n ??= label;
 
   const esc = (v) => String(v ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const sciHtml = (id) => (italic.has(N[id].r) ? `<i>${esc(N[id].s)}</i>` : esc(N[id].s));
