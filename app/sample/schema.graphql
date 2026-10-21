@@ -1,0 +1,502 @@
+type PageInfo {
+    hasNextPage: Boolean!
+    hasPreviousPage: Boolean!
+    startCursor: String
+    endCursor: String
+  }
+
+  type PublishedTreeSourceDataset {
+    provider: String!
+    datasetVersion: String!
+    importBatchId: String!
+  }
+
+  type PublishedTreeValidationSummary {
+    nodeCount: Int!
+    edgeCount: Int!
+    rootCount: Int!
+    orphanCount: Int!
+    cycleCount: Int!
+    conflictCount: Int!
+    primaryEdgeCount: Int
+    uncertainEdgeCount: Int
+    suppressedEdgeCount: Int
+    validatedAt: String!
+  }
+
+  type PublishedTreeVersion {
+    versionKey: String!
+    title: String!
+    scope: String!
+    topologyType: String!
+    status: String!
+    sourceDatasets: [PublishedTreeSourceDataset!]!
+    contentHash: String!
+    validationSummary: PublishedTreeValidationSummary!
+    publishedAt: String
+    classificationMode: String!
+    classificationPolicyVersion: String
+    placementPolicyVersion: String
+  }
+
+  type PublishedTaxonSource {
+    provider: String!
+    externalId: String!
+    matchConfidence: String!
+    matchReason: String!
+  }
+
+  type PublishedTaxon {
+    id: ID!
+    treeVersionKey: String!
+    scientificName: String
+    commonName: String
+    rank: String!
+    status: String!
+    taxonType: String!
+    hasChildren: Boolean!
+    source: PublishedTaxonSource
+    extinctionAssertion: PublishedExtinctionAssertion
+  }
+
+  type PublishedExtinctionAssertion {
+    status: String!
+    confidence: String!
+    derivation: String!
+    ruleVersion: String!
+    reasoning: String!
+    hasLivingDescendants: Boolean
+    hasFossilRecord: Boolean
+    evidenceCount: Int!
+  }
+
+  enum PublishedTaxonProfileStatus {
+    ready
+    partial
+    missing
+    rejected
+    failed
+    notProcessed
+    notGenerated
+  }
+
+  enum PublishedProfileMatchStatus {
+    exactMatch
+    resolvedEntity
+    commonsFallback
+    sourceMissing
+    notAttempted
+    rejected
+  }
+
+  type PublishedTaxonProfileSource {
+    provider: String!
+    entityId: String
+    title: String
+    url: String
+    revision: String
+    retrievedAt: String!
+    pipelineRunKey: String!
+    ruleVersion: String!
+    contentHash: String!
+  }
+
+  type PublishedTaxonProfileContentSource {
+    provider: String!
+    entityId: String
+    title: String
+    url: String
+    revision: String
+    licenseName: String
+    licenseUrl: String
+  }
+
+  type PublishedTaxonProfileImageAttribution {
+    creator: String
+    licenseName: String!
+    licenseUrl: String
+    sourceUrl: String!
+  }
+
+  type PublishedTaxonProfileImageAudit {
+    decision: String!
+    mediaType: String!
+    method: String!
+    reviewerType: String!
+    reviewedBy: String!
+    reviewedAt: String!
+    policyVersion: String!
+    reviewedImageUrl: String!
+    sourceUrl: String!
+    evidenceUrls: [String!]!
+    note: String!
+  }
+
+  type PublishedTaxonProfileEvidence {
+    descriptionMatchStatus: PublishedProfileMatchStatus!
+    imageMatchStatus: PublishedProfileMatchStatus!
+    resolutionMethod: String!
+    confidence: String!
+    note: String
+  }
+
+  type PublishedTaxonExample {
+    taxonId: ID!
+    scientificName: String
+    rank: String
+    imageUrl: String!
+  }
+
+  type PublishedTaxonProfile {
+    profileKey: String
+    taxonId: ID!
+    treeVersionKey: String!
+    status: PublishedTaxonProfileStatus!
+    hasPublishedContent: Boolean!
+    description: String
+    "useful, generic or null. Generic text only restates classification; show the fact card instead."
+    descriptionQuality: String
+    descriptionType: String
+    descriptionSource: PublishedTaxonProfileContentSource
+    imageUrl: String
+    imageRole: String
+    imageRelation: String
+    imageSource: PublishedTaxonProfileContentSource
+    examples: [String!]!
+    source: PublishedTaxonProfileSource
+    imageAttribution: PublishedTaxonProfileImageAttribution
+    imageAudit: PublishedTaxonProfileImageAudit
+    evidence: PublishedTaxonProfileEvidence
+    "Facts with provenance (records by country, authorship...), built at read time; null when there are none."
+    factCard: PublishedFactCard
+    "The descendant shown in the image when imageRelation is representativeDescendant; the app must label it."
+    imageTaxon: PublishedTaxon
+  }
+
+  type PublishedFactCardEntry {
+    "authorship, occurrenceCountries, environments, distributionAreas, originalDescription or typeMaterial"
+    type: String!
+    label: String!
+    "text, link, countryCodes, environmentCodes or tdwgCodes"
+    valueKind: String!
+    values: [String!]!
+    text: String
+    sourceLabel: String
+    sourceUrl: String
+  }
+
+  type PublishedFactCard {
+    ruleVersion: String!
+    leadLine: String
+    facts: [PublishedFactCardEntry!]!
+    sources: [String!]!
+    notice: String
+  }
+
+  type PublishedTaxonEdge {
+    node: PublishedTaxon!
+    cursor: String!
+  }
+
+  type PublishedTaxonConnection {
+    edges: [PublishedTaxonEdge!]!
+    pageInfo: PageInfo!
+    totalCount: Int!
+  }
+
+  type PublishedTaxonSearchResult {
+    taxon: PublishedTaxon!
+    lineage: [PublishedTaxon!]!
+  }
+
+  type PublishedTopologyPlacement {
+    supportBasis: String!
+    confidence: String!
+    reviewStatus: String!
+    provider: String!
+    datasetVersion: String!
+    supportingStudyCount: Int!
+    conflictingStudyCount: Int!
+    note: String
+  }
+
+  type PublishedTopologyNode {
+    id: ID!
+    treeVersionKey: String!
+    nodeType: String!
+    canonicalTaxonId: ID
+    scientificName: String
+    commonName: String
+    rank: String
+    taxonType: String
+    status: String
+    depth: Int!
+    hasChildren: Boolean!
+    supportBasis: String!
+    placement: PublishedTopologyPlacement
+    source: PublishedTaxonSource
+    extinctionAssertion: PublishedExtinctionAssertion
+  }
+
+  type PublishedTopologyNodeEdge {
+    node: PublishedTopologyNode!
+    cursor: String!
+  }
+
+  type PublishedTopologyNodeConnection {
+    edges: [PublishedTopologyNodeEdge!]!
+    pageInfo: PageInfo!
+    totalCount: Int!
+  }
+
+  type PublishedTopologySearchResult {
+    node: PublishedTopologyNode!
+    lineage: [PublishedTopologyNode!]!
+  }
+
+  type PublishedAuthorityAlternative {
+    role: String!
+    provider: String!
+    datasetVersion: String!
+    externalId: String!
+    assertionStatus: String!
+    sourceStatus: String
+    scientificName: String
+    parentScientificName: String
+    conflictGroupKey: String
+    effectiveAt: String!
+  }
+
+  type PublishedTaxonAuthority {
+    scientificName: String!
+    synonyms: [String!]!
+    taxonomicStatus: String!
+    selectedAuthority: String!
+    selectedAuthorityVersion: String!
+    authorityPolicyVersion: String!
+    decisionReason: String!
+    hasConflicts: Boolean!
+    lastVerifiedAt: String!
+    alternatives: [PublishedAuthorityAlternative!]!
+  }
+
+  type PublishedClassificationNode {
+    taxonId: ID!
+    scientificName: String
+    rank: String!
+    taxonomicStatus: String!
+    authority: String
+    authorityVersion: String
+    "Branch lists only (plan 8.2): reviewed Portuguese group name."
+    commonName: String
+    "Own image, else the image of the most popular descendant (named in imageOfName)."
+    imageUrl: String
+    imageOfName: String
+    childCount: Int
+    "living or extinct (a group is extinct only when no descendant lives); null when unknown."
+    extinctionStatus: String
+  }
+
+  type PublishedClassificationPlacement {
+    outcome: String!
+    selectedParent: PublishedClassificationNode
+    provider: String!
+    datasetVersion: String!
+    confidence: String!
+    reasonCode: String!
+    sourceFlags: [String!]!
+    evidenceCount: Int!
+    alternatives: [PublishedClassificationNode!]!
+    conflictCount: Int!
+  }
+  type PublishedClassificationEdge {
+    node: PublishedClassificationNode!
+    cursor: String!
+  }
+
+  type PublishedClassificationConnection {
+    edges: [PublishedClassificationEdge!]!
+    pageInfo: PageInfo!
+    totalCount: Int!
+  }
+
+  type PublishedFossilOccurrenceProvenance {
+    provider: String!
+    datasetVersion: String!
+    sourceRecordId: String!
+    importBatchId: String!
+    sourceUrl: String
+  }
+
+  type PublishedFossilOccurrence {
+    id: ID!
+    provider: String!
+    externalOccurrenceId: String!
+    minimumAgeMa: Float!
+    maximumAgeMa: Float!
+    locality: String
+    countryCode: String
+    stratigraphicUnit: String
+    identificationQualifier: String
+    matchConfidence: String!
+    provenance: PublishedFossilOccurrenceProvenance
+  }
+
+  type PublishedFossilOccurrenceEdge {
+    node: PublishedFossilOccurrence!
+    cursor: String!
+  }
+
+  type PublishedFossilOccurrenceConnection {
+    edges: [PublishedFossilOccurrenceEdge!]!
+    pageInfo: PageInfo!
+    totalCount: Int!
+  }
+
+
+enum PublishedEvolutionaryRelationType {
+  sisterLineage
+  stemRelative
+  crownMember
+  totalGroupMember
+  inferredAncestor
+  possibleSampledAncestor
+  fossilOccurrence
+  uncertainPlacement
+}
+
+type PublishedPhylogeneticPlacementAssertion {
+  parentTaxon: PublishedTaxon!
+  edgeType: String!
+  provider: String!
+  datasetVersion: String!
+  sourceRole: String!
+  confidence: String!
+  assertionStatus: String!
+  placementStatus: String!
+  reviewStatus: String!
+  placementPolicyVersion: String!
+  conflictGroupKey: String
+  supportScore: Float
+  note: String
+  evidenceCount: Int!
+}
+type PublishedEvolutionaryRelation {
+  taxon: PublishedTaxon!
+  relationType: PublishedEvolutionaryRelationType!
+  confidence: String!
+  assertionStatus: String!
+  note: String
+  evidenceCount: Int!
+}
+
+  type Query {
+    health: String!
+    getPublishedTreeVersion(treeVersionKey: String): PublishedTreeVersion
+    getPublishedRootTaxon(treeVersionKey: String): PublishedTaxon
+    getPublishedTaxon(
+      taxonId: ID!
+      treeVersionKey: String
+    ): PublishedTaxon
+    getPublishedTaxonProfile(
+      taxonId: ID!
+      treeVersionKey: String
+    ): PublishedTaxonProfile
+    getPublishedTaxonChildren(
+      parentTaxonId: ID!
+      treeVersionKey: String
+      first: Int
+      after: String
+      extinctionStatuses: [String!]
+    ): PublishedTaxonConnection!
+    getPublishedTaxonLineage(
+      taxonId: ID!
+      treeVersionKey: String
+    ): [PublishedTaxon!]!
+    getPublishedFossilOccurrences(
+      taxonId: ID!
+      treeVersionKey: String
+      first: Int
+      after: String
+    ): PublishedFossilOccurrenceConnection!
+    getPublishedEvolutionaryContext(
+      taxonId: ID!
+      treeVersionKey: String
+    ): [PublishedEvolutionaryRelation!]!
+    getPublishedPhylogeneticPlacements(
+      taxonId: ID!
+      treeVersionKey: String
+    ): [PublishedPhylogeneticPlacementAssertion!]!
+    searchPublishedTaxa(
+      query: String!
+      treeVersionKey: String
+      limit: Int
+    ): [PublishedTaxon!]! @deprecated(reason: "Use searchPublishedTaxonPaths for versioned lineage context.")
+    searchPublishedTaxonPaths(
+      query: String!
+      treeVersionKey: String
+      limit: Int
+    ): [PublishedTaxonSearchResult!]!
+    getPublishedTaxonAuthority(
+      taxonId: ID!
+      treeVersionKey: String
+    ): PublishedTaxonAuthority
+    getPublishedClassificationPlacement(
+      taxonId: ID!
+      treeVersionKey: String
+    ): PublishedClassificationPlacement
+    getPublishedClassificationLineage(
+      taxonId: ID!
+      treeVersionKey: String
+    ): [PublishedClassificationNode!]!
+    getPublishedTaxonExamples(
+      taxonId: ID!
+      treeVersionKey: String
+      limit: Int
+    ): [PublishedTaxonExample!]!
+    getPublishedClassificationChildren(
+      parentTaxonId: ID!
+      treeVersionKey: String
+      first: Int
+      after: String
+    ): PublishedClassificationConnection!
+    getPublishedEvolutionaryLineage(
+      nodeId: ID!
+      treeVersionKey: String
+    ): [PublishedTopologyNode!]!
+    getPublishedTopologyRoot(treeVersionKey: String): PublishedTopologyNode
+    getPublishedTopologyNode(
+      nodeId: ID!
+      treeVersionKey: String
+    ): PublishedTopologyNode
+    getPublishedTopologyChildren(
+      parentNodeId: ID!
+      treeVersionKey: String
+      first: Int
+      after: String
+    ): PublishedTopologyNodeConnection!
+    getPublishedTopologyLineage(
+      nodeId: ID!
+      treeVersionKey: String
+    ): [PublishedTopologyNode!]!
+    getPublishedTopologyNavigationChildren(
+      parentNodeId: ID!
+      treeVersionKey: String
+      first: Int
+      after: String
+    ): PublishedTopologyNodeConnection!
+    getPublishedTopologyNavigationLineage(
+      nodeId: ID!
+      treeVersionKey: String
+    ): [PublishedTopologyNode!]!
+    searchPublishedTopologyPaths(
+      query: String!
+      treeVersionKey: String
+      limit: Int
+    ): [PublishedTopologySearchResult!]!
+    searchPublishedTopologyNavigationPaths(
+      query: String!
+      treeVersionKey: String
+      limit: Int
+    ): [PublishedTopologySearchResult!]!
+  }
