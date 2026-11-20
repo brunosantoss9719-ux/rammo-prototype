@@ -1,0 +1,88 @@
+name: Temporary CP2077 PTBR source
+
+on:
+  push:
+    branches:
+      - 'temp/cp2077-ptbr-source'
+
+permissions:
+  contents: read
+
+jobs:
+  extract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Download only PT-BR localization
+        shell: bash
+        run: |
+          set -euo pipefail
+          WORK="$RUNNER_TEMP/cp2077"
+          mkdir -p "$WORK/out"
+          cd "$WORK"
+          curl -fL --retry 5 -o cp2077.torrent "https://itorrents.org/torrent/489745749AB9EE377AE3F91E9D3DF100876B6C0F.torrent"
+          npm init -y >/dev/null 2>&1
+          npm install --no-audit --no-fund webtorrent memory-chunk-store
+          cat > extract.mjs <<'NODE'
+          import fs from 'node:fs'
+          import path from 'node:path'
+          import WebTorrent from 'webtorrent'
+          import MemoryChunkStore from 'memory-chunk-store'
+
+          const expected = [
+            {index:63, path:'Cyberpunk.2077.GOG.Rip-InsaneRamZes/archive/pc/content/lang_pt_text.archive', bytes:7913472, out:'cyberpunk_base_ptbr.archive'},
+            {index:91, path:'Cyberpunk.2077.GOG.Rip-InsaneRamZes/archive/pc/ep1/lang_pt_text.archive', bytes:2293760, out:'cyberpunk_phantom_liberty_ptbr.archive'}
+          ]
+          const trackers = [
+            'http://tracker.opentrackr.org:1337/announce',
+            'https://tracker.opentrackr.org:443/announce',
+            'http://open.acgnxtracker.com:80/announce',
+            'https://open.acgnxtracker.com:443/announce',
+            'http://tracker2.dler.org:80/announce',
+            'https://tracker.tamersunion.org:443/announce',
+            'https://tracker.bt4g.com:443/announce',
+            'http://tracker.renfei.net:8080/announce',
+            'https://tracker.renfei.net:443/announce',
+            'http://tracker.gbitt.info:80/announce',
+            'https://tracker.foreverpirates.co:443/announce',
+            'http://tracker1.bt.moack.co.kr:80/announce'
+          ]
+          const work=process.env.RUNNER_TEMP+'/cp2077'
+          const client=new WebTorrent({dht:true,lsd:false,utPex:true,maxConns:120})
+          const torrent=client.add(fs.readFileSync(work+'/cp2077.torrent'),{
+            announce:trackers,deselect:true,store:MemoryChunkStore,storeCacheSlots:0,destroyStoreOnDestroy:true
+          })
+          torrent.on('wire',()=>console.log('PEER',torrent.numPeers))
+          torrent.on('warning',e=>console.log('WARN',e.message))
+          await new Promise((resolve,reject)=>{torrent.once('ready',resolve);torrent.once('error',reject)})
+          if(torrent.infoHash.toLowerCase()!=='489745749ab9ee377ae3f91e9d3df100876b6c0f') throw new Error('infohash mismatch')
+          for(const e of expected){
+            const f=torrent.files[e.index]
+            if(!f||f.path!==e.path||f.length!==e.bytes) throw new Error('metadata mismatch '+e.index)
+            f.select(100)
+            console.log('SELECT',e.index,f.length)
+          }
+          const timer=setInterval(()=>console.log('STATUS',JSON.stringify({peers:torrent.numPeers,speed:client.downloadSpeed,files:expected.map(e=>({i:e.index,p:torrent.files[e.index].progress,d:torrent.files[e.index].downloaded}))})),10000)
+          try{
+            const dl=Promise.all(expected.map(async e=>{
+              const b=Buffer.from(await torrent.files[e.index].arrayBuffer())
+              if(b.length!==e.bytes) throw new Error('size mismatch '+e.index)
+              fs.writeFileSync(path.join(work,'out',e.out),b)
+            }))
+            const timeout=new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),15*60*1000))
+            await Promise.race([dl,timeout])
+          }finally{clearInterval(timer);await client.destroy()}
+          NODE
+          node extract.mjs
+          cd "$WORK/out"
+          sha256sum *.archive | tee SHA256SUMS.txt
+          test "$(stat -c %s cyberpunk_base_ptbr.archive)" = "7913472"
+          test "$(stat -c %s cyberpunk_phantom_liberty_ptbr.archive)" = "2293760"
+
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: cp2077-ptbr-source
+          path: ${{ runner.temp }}/cp2077/out/
+          retention-days: 1
+          compression-level: 9
